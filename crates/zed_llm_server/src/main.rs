@@ -8,11 +8,16 @@ use release_channel::AppVersion;
 use reqwest_client::ReqwestClient;
 
 async fn authenticate(client: Arc<client::Client>, cx: &gpui::AsyncAppContext) -> Result<()> {
-    if *client::ZED_DEVELOPMENT_AUTH {
-        client.authenticate_and_connect(true, cx).await?;
-    } else if client::IMPERSONATE_LOGIN.is_some() {
-        client.authenticate_and_connect(false, cx).await?;
+    if client.has_credentials(&cx).await {
+        client.authenticate_and_connect(true, &cx).await?;
+    } else {
+        client.authenticate_and_connect(false, &cx).await?;
     }
+
+    let Some(user_id) = client.user_id() else {
+        return Err(anyhow::anyhow!("User not authenticated"));
+    };
+    info!("Successfully authenticated user (ID: {})", user_id);
     Ok(())
 }
 
@@ -20,7 +25,7 @@ fn run_zed_app() {
     gpui::App::headless().run(move |cx| {
         info!("Zed Headless App running...");
         let app_version = AppVersion::init(std::env!("CARGO_PKG_VERSION"));
-        info!("app_version: {}", app_version);
+        info!("App version: {}", app_version);
         release_channel::init(app_version, cx);
 
         settings::init(cx);
@@ -31,9 +36,8 @@ fn run_zed_app() {
         let client = client::Client::production(cx);
 
         cx.spawn(|cx| async move {
-            match authenticate(client, &cx).await {
-                Ok(_) => info!("Authenticated successfully"),
-                Err(err) => error!("Failed to authenticate: {}", err),
+            if let Err(err) = authenticate(client, &cx).await {
+                error!("Failed to authenticate: {}\nPlease restart the server to try again.", err);
             }
         })
         .detach();
