@@ -142,6 +142,7 @@ members = [
     "crates/worktree",
     "crates/zed",
     "crates/zed_actions",
+    "crates/zed_llm_server",
     "crates/zeta",
     "crates/git_ui",
 
