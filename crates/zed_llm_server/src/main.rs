@@ -7,6 +7,9 @@ use log::info;
 use release_channel::AppVersion;
 use reqwest_client::ReqwestClient;
 
+mod llm_client;
+use llm_client::LlmClient;
+
 async fn authenticate(client: Arc<client::Client>, cx: &gpui::AsyncAppContext) -> Result<()> {
     if client.has_credentials(&cx).await {
         client.authenticate_and_connect(true, &cx).await?;
