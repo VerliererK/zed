@@ -1,0 +1,14 @@
+[package]
+name = "zed_llm_server"
+version = "0.167.1"
+edition = "2021"
+
+[dependencies]
+anyhow.workspace = true
+client.workspace = true
+env_logger.workspace = true
+gpui.workspace = true
+log.workspace = true
+release_channel.workspace = true
+reqwest_client.workspace = true
+settings.workspace = true
