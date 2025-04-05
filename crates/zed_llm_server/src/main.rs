@@ -75,6 +75,8 @@ async fn chat_completion(
     })
     .unwrap();
 
+    info!("[/v1/messages] Performing completion...");
+
     let response = match state.post("/completion", body).await {
         Ok(res) => res,
         Err(e) => {
@@ -91,7 +93,15 @@ async fn chat_completion(
         let stream = lines_stream
             .map(|line_result| {
                 line_result.map(|line| {
-                    let formatted_line = format!("data: {}\n\n", line);
+                    // Try to parse the line as JSON to check for the "type" field
+                    let formatted_line = match serde_json::from_str::<serde_json::Value>(&line) {
+                        Ok(json) => match json.get("type").and_then(|v| v.as_str()) {
+                            Some(event_type) => format!("event: {}\ndata: {}\n\n", event_type, line),
+                            _ => format!("data: {}\n\n", line),
+                        },
+                        Err(_) => format!("data: {}\n\n", line),
+                    };
+
                     bytes::Bytes::from(formatted_line)
                 })
             })
@@ -107,14 +117,14 @@ async fn chat_completion(
             }
         };
 
-        info!("[/v1/messages] Successfully proxied completion response");
+        info!("[/v1/messages] Successfully completion response to client");
         return Ok(response);
     } else {
         let status = response.status();
-        error!("[/v1/messages] Upstream API request failed with status: {:?}", status);
+        error!("[/v1/messages] Completion API request failed with status: {:?}", status);
         return Err((
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY),
-            "Upstream API request failed".to_string(),
+            "Completion API request failed".to_string(),
         ));
     }
 }
