@@ -50,7 +50,7 @@ jobs:
 
       - name: Build zed_llm_server release
         working-directory: zed
-        run: cargo build --release --bin zed_llm_server
+        run: cargo build --release --package zed_llm_server
 
       - name: Archive build
         uses: actions/upload-artifact@v4
