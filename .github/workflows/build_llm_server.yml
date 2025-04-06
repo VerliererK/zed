@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # Manually trigger the workflow
 
 jobs:
-  build:
+  build_windows:
     runs-on: windows-latest
 
     steps:
@@ -28,13 +28,6 @@ jobs:
       - name: Checkout self (workflow repo)
         uses: actions/checkout@v4
 
-      - name: Checkout Zed
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.repository }}
-          ref: ${{ github.ref }}
-          path: zed
-
       - name: Install rust nightly
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -46,14 +39,44 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: llm-server-windows-${{ hashFiles('**/Cargo.lock') }}
-          workspaces: "zed -> target"
+          workspaces: ". -> target"
 
       - name: Build zed_llm_server release
-        working-directory: zed
         run: cargo build --release --package zed_llm_server
 
       - name: Archive build
         uses: actions/upload-artifact@v4
         with:
           name: zed-llm-server-release
-          path: zed/target/release/zed_llm_server.exe
+          path: target/release/zed_llm_server.exe
+
+  build_linux:
+    runs-on: buildjet-16vcpu-ubuntu-2204
+
+    steps:
+      - name: Checkout self (workflow repo)
+        uses: actions/checkout@v4
+
+      - name: Add Rust to the PATH
+        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install Linux dependencies
+        run: ./script/linux
+
+      - name: Limit target directory size
+        run: script/clear-target-dir-if-larger-than 100
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: llm-server-linux-${{ hashFiles('**/Cargo.lock') }}
+          workspaces: ". -> target"
+
+      - name: Build zed_llm_server release
+        run: cargo build --release --package zed_llm_server
+
+      - name: Archive build
+        uses: actions/upload-artifact@v4
+        with:
+          name: zed-llm-server-linux-release
+          path: target/release/zed_llm_server
