@@ -21,3 +21,4 @@ serde_json.workspace = true
 settings.workspace = true
 smol.workspace = true
 tokio = { workspace = true, features = ["full"] }
+clap = { workspace = true, features = ["derive"] }

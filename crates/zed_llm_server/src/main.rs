@@ -1,4 +1,5 @@
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
+use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -130,8 +131,29 @@ async fn chat_completion(
 }
 // --- End API Handlers ---
 
-async fn run_web_server(llm_client: Arc<LlmClient>, server_port: u16) {
-    let addr = SocketAddr::from(([127, 0, 0, 1], server_port));
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(version, about = "Zed LLM Server")]
+struct Args {
+    /// IP address to bind to
+    #[arg(long, default_value = "127.0.0.1")]
+    ip: String,
+
+    /// Port to listen on
+    #[arg(long, short, default_value_t = 3000)]
+    port: u16,
+}
+
+async fn run_web_server(llm_client: Arc<LlmClient>, args: Args) {
+    let ip_addr = match IpAddr::from_str(&args.ip) {
+        Ok(ip) => ip,
+        Err(e) => {
+            error!("Invalid IP address '{}': {}", args.ip, e);
+            std::process::exit(1);
+        }
+    };
+    let addr = SocketAddr::new(ip_addr, args.port);
     info!("Starting Axum Web server on {}", addr);
 
     let app_state: AppState = llm_client;
@@ -161,7 +183,7 @@ async fn authenticate(client: Arc<client::Client>, cx: &gpui::AsyncAppContext) -
     Ok(())
 }
 
-fn run_zed_app() {
+fn run_zed_app(args: Args) {
     gpui::App::headless().run(move |cx| {
         info!("Zed Headless App starting...");
         let app_version = AppVersion::init(std::env!("CARGO_PKG_VERSION"));
@@ -184,7 +206,7 @@ fn run_zed_app() {
                 error!("Please restart the server to try again.");
             } else {
                 info!("Authentication successful. Starting web server...");
-                run_web_server(llm_client, 3000).await;
+                run_web_server(llm_client, args).await;
             }
         })
         .detach();
@@ -195,5 +217,10 @@ fn run_zed_app() {
 async fn main() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
-    run_zed_app();
+    let args = Args::parse();
+    if let Err(e) = IpAddr::from_str(&args.ip) {
+        error!("Invalid IP address '{}': {}", args.ip, e);
+        std::process::exit(1);
+    };
+    run_zed_app(args);
 }
