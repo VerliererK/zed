@@ -38,7 +38,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
-          key: llm-server-windows-${{ hashFiles('**/Cargo.lock') }}
+          key: llm-server-windows-${{ hashFiles('Cargo.lock') }}
           workspaces: ". -> target"
 
       - name: Build zed_llm_server release
@@ -69,7 +69,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
-          key: llm-server-linux-${{ hashFiles('**/Cargo.lock') }}
+          key: llm-server-linux-${{ hashFiles('Cargo.lock') }}
           workspaces: ". -> target"
 
       - name: Build zed_llm_server release
