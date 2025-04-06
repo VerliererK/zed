@@ -40,10 +40,10 @@ async fn get_token(State(state): State<AppState>) -> (StatusCode, String) {
     }
 }
 
-async fn list_models(State(state): State<AppState>) -> (StatusCode, String) {
+async fn list_models(State(state): State<AppState>) -> impl IntoResponse {
     let mut response = match state.get("/models").await {
         Ok(response) => response,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     };
 
     let mut body = String::new();
@@ -54,10 +54,14 @@ async fn list_models(State(state): State<AppState>) -> (StatusCode, String) {
         }
         Err(e) => {
             error!("[/v1/models] Failed to read response body: {}", e);
-            return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to read response body".to_string());
+            return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to read response body".to_string()).into_response();
         }
     };
-    return (StatusCode::OK, text);
+
+    match serde_json::from_str::<serde_json::Value>(&text) {
+        Ok(data) => (StatusCode::OK, Json(data)).into_response(),
+        Err(_) => (StatusCode::OK, text).into_response(),
+    }
 }
 
 async fn chat_completion(
