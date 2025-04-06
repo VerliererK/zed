@@ -1231,6 +1231,7 @@ impl Client {
                         write!(&mut url, "&impersonate={}", impersonate_login).unwrap();
                     }
 
+                    log::info!("Authenticate Url: {}", url);
                     open_url_tx.send(url).log_err();
 
                     // Receive the HTTP request from the user's browser. Retrieve the user id and encrypted
