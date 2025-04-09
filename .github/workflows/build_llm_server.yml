@@ -80,3 +80,37 @@ jobs:
         with:
           name: zed-llm-server-linux-release
           path: target/release/zed_llm_server
+
+  build_mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout self (workflow repo)
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Accept Xcode license
+        run: sudo xcodebuild -license accept
+
+      - name: Install Homebrew dependencies
+        run: brew update && brew install cmake
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: llm-server-macos-${{ hashFiles('Cargo.lock') }}
+          workspaces: ". -> target"
+
+      - name: Build zed_llm_server release
+        run: cargo build --release --package zed_llm_server
+
+      - name: Archive build
+        uses: actions/upload-artifact@v4
+        with:
+          name: zed-llm-server-macos-release
+          path: target/release/zed_llm_server
