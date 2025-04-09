@@ -28,12 +28,10 @@ jobs:
       - name: Checkout self (workflow repo)
         uses: actions/checkout@v4
 
-      - name: Install rust nightly
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: nightly
-          override: true
-          target: wasm32-wasip1
+          toolchain: stable
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -92,7 +90,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          override: true
 
       - name: Accept Xcode license
         run: sudo xcodebuild -license accept
